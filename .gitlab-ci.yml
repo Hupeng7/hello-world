@@ -1,0 +1,72 @@
+variables:
+  SERVICE_NAME: "hello-world"
+  JAR_DIR: "hello-world-server/target"
+
+
+stages:
+  - build
+  - test
+  - deploy_api
+  - push
+
+build:
+  stage: build
+  script:
+    - mvn package -Dmaven.test.skip=true -U
+    - mv ${JAR_DIR}/*.jar tmp.jar
+  artifacts:
+    paths:
+    - tmp.jar
+    expire_in: 1 week
+  only:
+    - master
+    - release
+    - tags
+  tags:
+    - shell
+
+test:
+  stage: test
+  script:
+    - mvn test
+  only:
+    - master
+    - release
+    - tag
+  tags:
+    - shell
+
+deploy api:
+  stage: deploy_api
+  script:
+    - mvn -pl ${SERVICE_NAME}-api deploy
+  only:
+    - master
+  tags:
+    - shell
+
+
+push image for stag:
+  stage: push
+  script:
+    - cp tmp.jar ./app.jar
+    - docker build -t registry-vpc.cn-shanghai.aliyuncs.com/hzph/${SERVICE_NAME}:dev${CI_COMMIT_SHA} .
+    - docker push registry-vpc.cn-shanghai.aliyuncs.com/hzph/${SERVICE_NAME}:dev${CI_COMMIT_SHA}
+    - docker rmi -f registry-vpc.cn-shanghai.aliyuncs.com/hzph/${SERVICE_NAME}:dev${CI_COMMIT_SHA}
+  only:
+    - master
+  tags:
+    - shell
+push image for prod:
+  stage: push
+  script:
+    - cp tmp.jar ./app.jar
+    - mv hello-world-server/bootstrap.properties hello-world-server/bootstrap-${CI_COMMIT_TAG}.properties
+    - cp hello-world-server/bootstrap-prod.properties hello-world-server/bootstrap.properties
+    - docker build -t registry-vpc.cn-shanghai.aliyuncs.com/hzph/${SERVICE_NAME}:${CI_COMMIT_TAG} .
+    - docker push registry-vpc.cn-shanghai.aliyuncs.com/hzph/${SERVICE_NAME}:${CI_COMMIT_TAG}
+    - docker rmi -f registry-vpc.cn-shanghai.aliyuncs.com/hzph/${SERVICE_NAME}:${CI_COMMIT_TAG}
+  only:
+    - tags
+  tags:
+    - shell
