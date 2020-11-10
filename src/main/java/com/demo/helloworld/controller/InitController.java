@@ -17,15 +17,15 @@ import java.util.Date;
  */
 
 @RestController
-@RequestMapping("/hello")
+@RequestMapping("/")
 @Slf4j
-public class HelloController {
-    @GetMapping("")
-    public String hello() {
+public class InitController {
+    @GetMapping("/")
+    public String index() {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String nowStr = simpleDateFormat.format(new Date());
-        log.info("request hello success,time : {}", nowStr);
-        return nowStr + ",Hello World! \n yeah";
+        log.info("request index success,time : {}", nowStr);
+        return nowStr + ",Hello World! index page.";
     }
 
 }
